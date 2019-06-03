@@ -8,7 +8,13 @@ import android.hardware.SensorManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import kotlinx.android.synthetic.main.activity_main.*
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity()
 {
@@ -26,6 +32,7 @@ class MainActivity : AppCompatActivity()
     {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        accelerometerValues = ArrayList<FloatArray>()
 
         //This function saves instance for each sensor
         initializeAllSensors()
@@ -33,7 +40,6 @@ class MainActivity : AppCompatActivity()
         initializeAllListeners()
         //This function links the sensor with listeners
         linkListeners()
-
         //This function sets Button Click listeners
         setButtonListeners()
 
@@ -43,10 +49,28 @@ class MainActivity : AppCompatActivity()
     private fun setButtonListeners()
     {
         SamplingButton.setOnClickListener {
-            if (testRunning)
+            if (testRunning) //stop pressed
             {
                 testRunning=false
                 SamplingButton.text="Start"
+                val jsonArray = JSONArray(accelerometerValues)
+                val url = "http://192.168.0.107:8001"
+                val data = JSONObject()
+                data.put("hello", jsonArray)
+
+                val jsonObjectRequest = JsonObjectRequest(Request.Method.POST, url,data,
+                        Response.Listener { response ->
+                            Log.i(TAG, response.toString())
+                            accelerometerValues = ArrayList<FloatArray>()
+                        },
+                        Response.ErrorListener { error ->
+                            Log.i(TAG, error.toString())
+                        }
+                )
+
+                val queue = Volley.newRequestQueue(this)
+                queue.add(jsonObjectRequest)
+
             }
             else
             {
@@ -67,7 +91,7 @@ class MainActivity : AppCompatActivity()
     private fun initializeAllSensors()
     {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        accelerometerSensor= sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        accelerometerSensor= sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
     }
 
     private fun initializeAllListeners()
@@ -82,7 +106,7 @@ class MainActivity : AppCompatActivity()
             {
                 if (testRunning)
                 {
-                    accelerometerValues.add(event!!.values)
+                    accelerometerValues.add(event!!.values.clone())
                 }
             }
 
