@@ -26,6 +26,7 @@ class MainActivity : AppCompatActivity()
     private var testRunning=false
 
     private lateinit var accelerometerValues:ArrayList<FloatArray>
+    private var initialSteps = 0
 
 
     override fun onCreate(savedInstanceState: Bundle?)
@@ -65,6 +66,7 @@ class MainActivity : AppCompatActivity()
                         },
                         Response.ErrorListener { error ->
                             Log.i(TAG, error.toString())
+                            accelerometerValues = ArrayList<FloatArray>()
                         }
                 )
 
@@ -91,7 +93,7 @@ class MainActivity : AppCompatActivity()
     private fun initializeAllSensors()
     {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        accelerometerSensor= sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        accelerometerSensor= sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
     }
 
     private fun initializeAllListeners()
@@ -107,6 +109,16 @@ class MainActivity : AppCompatActivity()
                 if (testRunning)
                 {
                     accelerometerValues.add(event!!.values.clone())
+                    if (initialSteps==0)
+                    {
+                        initialSteps = event.values[0].toInt()
+                    }
+                    else
+                    {
+                        initialSteps+=1
+                        stepCountView.text = initialSteps.toString()
+                    }
+
                 }
             }
 
